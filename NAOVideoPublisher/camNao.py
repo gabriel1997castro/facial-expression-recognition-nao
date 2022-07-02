@@ -72,7 +72,7 @@ while True:
         message = base64.b64encode(buffer)
         server_socket.sendto(message, addr)
 
-        cv2.imshow('Envia', frame)
+        # cv2.imshow('Envia', frame) #Utilizar para debugger
         key = cv2.waitKey(1) & 0xFF
         if key == ord('q'):
             video_service.unsubscribe(nameId)
