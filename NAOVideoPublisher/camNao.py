@@ -7,12 +7,8 @@ import vision_definitions
 
 host = '127.0.0.1'
 portHost = 8081
-NAOIP = "169.254.187.174"
+NAOIP = "169.254.171.139"
 NAOPORT = 9559
-
-vid = cv2.VideoCapture('video1.mkv')
-vid.set(cv2.CAP_PROP_FRAME_WIDTH, 840)
-vid.set(cv2.CAP_PROP_FRAME_HEIGHT, 620)
 
 BUFF_SIZE = 65536
 
@@ -37,11 +33,10 @@ SUBSCRIBE_NAME = "NAO_CAM"
 nameId = video_service.subscribe(SUBSCRIBE_NAME, resolution, colorSpace, fps)
 
 while True:
-    print
     msg, addr = server_socket.recvfrom(BUFF_SIZE)
     print('GOT connection from ', addr)
     teste = 400
-    while(vid.isOpened()):
+    while True:
 
         camNAO = video_service.getImageRemote(nameId)
         if camNAO is None:
@@ -68,11 +63,11 @@ while True:
         frame = cv2.flip(frame, HORIZONTAL_FLIP_INDEX)
 
 
-        encode, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
+        encode, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 160])
         message = base64.b64encode(buffer)
+        cv2.imshow('Envia', frame) #Utilizar para debugger
         server_socket.sendto(message, addr)
 
-        # cv2.imshow('Envia', frame) #Utilizar para debugger
         key = cv2.waitKey(1) & 0xFF
         if key == ord('q'):
             video_service.unsubscribe(nameId)
