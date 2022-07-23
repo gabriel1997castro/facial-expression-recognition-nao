@@ -1,13 +1,15 @@
-import socket, cv2, base64
+import socket, cv2, math, base64
 import numpy as np
 from PIL import Image
 from naoqi import ALProxy
 import qi
 import vision_definitions
+import pickle
+
 
 host = '127.0.0.1'
 portHost = 8081
-NAOIP = "169.254.171.139"
+NAOIP = "192.168.1.57"
 NAOPORT = 9559
 
 BUFF_SIZE = 65536
@@ -63,10 +65,33 @@ while True:
         frame = cv2.flip(frame, HORIZONTAL_FLIP_INDEX)
 
 
-        encode, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 160])
-        message = base64.b64encode(buffer)
+        encode, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
+
+        if encode: 
+            buffer = buffer.tobytes()
+            buffer_size = len(buffer)
+        
+        num_packs = 1
+        if buffer_size > BUFF_SIZE:
+            num_packs = math.ceil(float(buffer_size)/BUFF_SIZE)
+        
+        frame_info = {"packs":int(num_packs)}
+
+        server_socket.sendto(pickle.dumps(frame_info), addr)
+        
+        left = 0
+        right = BUFF_SIZE
+
+        for index in range(int(num_packs)):
+            data = buffer[left:right]
+            left = right
+            right += BUFF_SIZE
+
+            server_socket.sendto(data, addr)
+        
+        # message = base64.b64encode(buffer)
         cv2.imshow('Envia', frame) #Utilizar para debugger
-        server_socket.sendto(message, addr)
+        # server_socket.sendto(message, addr)
 
         key = cv2.waitKey(1) & 0xFF
         if key == ord('q'):
