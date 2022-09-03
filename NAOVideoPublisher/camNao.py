@@ -9,7 +9,7 @@ import pickle
 
 host = '127.0.0.1'
 portHost = 8081
-NAOIP = "192.168.1.57"
+NAOIP = "169.254.112.202"
 NAOPORT = 9559
 
 BUFF_SIZE = 65536
