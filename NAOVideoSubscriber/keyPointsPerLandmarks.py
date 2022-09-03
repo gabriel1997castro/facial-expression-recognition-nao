@@ -113,6 +113,34 @@ lipsOutter = {
 280: True,
 330: True,
 427: True,
+
+#Boca
+12: True,
+38: True,
+41: True,
+42: True,
+183: True,
+62: True,
+96: True,
+89: True,
+179: True,
+86: True, 
+15: True,
+316: True,
+403: True,
+319: True,
+325: True,
+29: True,
+407: True,
+272: True,
+271: True,
+268: True,
+
+#Nariz
+19: True,
+5: True,
+197: True,
+6: True,
 }
 
 class FaceMeshDetector:
@@ -155,16 +183,16 @@ class FaceMeshDetector:
             for id, lm in enumerate(faceLms.landmark):
                 # print('LM = ', lm)
                 # print('AZUL', id)
-                ih, iw, ic = img.shape
+                ih, iw = img.shape
                 x, y = int(lm.x*iw), int(lm.y*ih)
                 # if id % 2 == 0:
                 # cv2.putText(img, str(id), (x,y), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0), 1)
                 # cv2.putText(empty, str(id), (x,y), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0), 1)
                 if lipsOutter.get(id):
                     # cv2.putText(img, str(id), (x,y), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0), 1)
-                    img = cv2.circle(img, (x,y), 1, (0, 255, 0), -1)
+                    img = cv2.circle(img, (x,y), 1, (255, 255, 255), -1)
                     # cv2.putText(empty, str(id), (x,y), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0), 1)
-                    empty = cv2.circle(empty, (x,y), 1, (0, 255, 0), -1)
+                    empty = cv2.circle(empty, (x,y), 1, (255, 255, 255), -1)
                 face.append([x,y])
                 
             face.append(face)
@@ -194,7 +222,7 @@ def main():
                 # data = base64.b64decode(packet, ' /')
                 # npdata = np.fromstring(data, dtype=np.uint8)
                 frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
-
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                 empty, img = detector.findOnlyFaceMesh(frame)
                 cTime = time.time()
                 fps = 1 / (cTime - pTime)
