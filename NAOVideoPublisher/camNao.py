@@ -9,7 +9,7 @@ import pickle
 
 host = '127.0.0.1'
 portHost = 8081
-NAOIP = "169.254.112.202"
+NAOIP = '192.168.1.62'
 NAOPORT = 9559
 
 BUFF_SIZE = 65536
@@ -31,6 +31,9 @@ resolution = vision_definitions.kVGA
 colorSpace = vision_definitions.kRGBColorSpace
 fps = 30
 SUBSCRIBE_NAME = "NAO_CAM"
+
+tts = session.service("ALTextToSpeech")
+tts.setLanguage("Brazilian")
 
 nameId = video_service.subscribe(SUBSCRIBE_NAME, resolution, colorSpace, fps)
 
@@ -92,6 +95,24 @@ while True:
         # message = base64.b64encode(buffer)
         cv2.imshow('Envia', frame) #Utilizar para debugger
         # server_socket.sendto(message, addr)
+        pred = server_socket.recvfrom(BUFF_SIZE)
+        
+        emotion = pred[0]
+        print(emotion)
+
+        if emotion == 'Sad':
+            emotion = 'Triste'
+
+        if emotion == 'Happy':
+            emotion = 'Feliz'
+
+        if emotion == 'Neutral':
+            emotion = 'Neutro'
+
+        if emotion == 'Angry':
+            emotion = 'Raiva'
+
+        tts.say(emotion)
 
         key = cv2.waitKey(1) & 0xFF
         if key == ord('q'):
