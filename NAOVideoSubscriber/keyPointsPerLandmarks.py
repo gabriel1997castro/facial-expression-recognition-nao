@@ -5,6 +5,8 @@ import numpy as np
 import time
 import mediapipe.python.solutions.face_detection_test
 import pickle
+from pointsFace import lipsOutter
+import mediapipe as mp
 
 BUFF_SIZE = 65000
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -14,134 +16,6 @@ portHost = 8081
 message = 'AZUL'
 
 client_socket.sendto(message.encode('utf-8'), (HOST, portHost))
-
-lipsOutter = {
-# 61: True,
-# 185: True,
-# 40: True,
-# 39: True,
-# 37: True,
-# 0: True,
-# 267: True,
-# 269: True,
-# 270: True,
-# 409: True,
-# 291: True,
-# 375: True,
-# 321: True,
-# 405: True,
-# 314: True,
-# 17: True,
-# 84: True,
-# 181: True,
-# 91: True,
-# 146: True,
-# 61: True,
-
-# Silhueta do rosto 
-10: True,
-109: True,
-67: True,
-103: True,
-54: True,
-21: True,
-162: True,
-127: True,
-234: True,
-93: True,
-132: True,
-58: True,
-172: True,
-136: True,
-150: True,
-149: True,
-176: True,
-148: True,
-152: True,
-377: True,
-400: True,
-378: True,
-379: True,
-365: True,
-397: True,
-288: True,
-361: True,
-323: True,
-454: True,
-356: True,
-389: True,
-251: True,
-284: True,
-332: True,
-297: True,
-338: True,
-
-# Sombrancelhas
-8: True,
-9: True,
-46: True,
-52: True,
-107: True,
-336: True,
-282: True,
-276: True,
-
-# Olho esquerdo
-33: True,
-133: True,
-144: True,
-160: True,
-158: True,
-153: True,
-157: True,
-
-#Bochecha Esquerda
-50: True,
-101: True,
-207: True,
-
-# Olho direito
-263: True,
-362: True,
-385: True,
-380: True,
-384: True,
-387: True,
-373: True,
-
-#Bochecha direito
-280: True,
-330: True,
-427: True,
-
-#Boca
-12: True,
-38: True,
-41: True,
-42: True,
-183: True,
-62: True,
-96: True,
-89: True,
-179: True,
-86: True, 
-15: True,
-316: True,
-403: True,
-319: True,
-325: True,
-29: True,
-407: True,
-272: True,
-271: True,
-268: True,
-
-#Nariz
-19: True,
-5: True,
-197: True,
-6: True,
-}
 
 class FaceMeshDetector:
     def __init__(self, staticMode=False, maxFaces=1, minDetectionCon=0.5, minTrackCon=0.5):
@@ -157,6 +31,8 @@ class FaceMeshDetector:
         self.faceMash = self.mpFaceMash.FaceMesh(max_num_faces=10)
         self.drawSpec = self.mpDraw.DrawingSpec(thickness=1, circle_radius=1)
 
+        # self.face = mediapipe.python.solutions.face_detection.FaceDetection(model_selection=0, min_detection_confidence=0.5)
+        self.face = mp.solutions.mediapipe.python.solutions.face_detection.FaceDetection(model_selection=1, min_detection_confidence=0.1)
     def findFaceMesh(self, img, draw=True):
         self.imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         self.results = self.faceMash.process(self.imgRGB)
@@ -171,7 +47,39 @@ class FaceMeshDetector:
         self.imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         self.results = self.faceMash.process(self.imgRGB)
         #print(self.results.multi_face_landmarks)
+
+        contorno = img
+        contorno.flags.writeable = False
+        contorno = cv2.cvtColor(contorno, cv2.COLOR_BGR2RGB)
+
+        results = self.face.process(contorno)
+
+        if results.detections:
+            for detection in results.detections:
+                # print("detection: ", detection.location_data.relative_bounding_box)
+
+                data = detection.location_data.relative_bounding_box
+
+                h, w, c = contorno.shape
+                xleft = data.xmin*w
+                xleft = int(xleft)
+                xtop = data.ymin*h
+                xtop = int(xtop)
+                xright = data.width*w + xleft
+                xright = int(xright)
+                xbottom = data.height*h + xtop
+                xbottom = int(xbottom)
+
+                print("left: ", xleft)
+                print("top: ", xtop)
+                print("right: ", xright)
+                print("bottom: ", xbottom)
+
+                contorno = contorno[xtop:xleft, xbottom:xright]
+                # self.mpDraw.draw_detection(contorno, detection)
+        
         empty = np.zeros(img.shape, dtype='uint8')
+        
         if self.results.multi_face_landmarks:
             for faceLms in self.results.multi_face_landmarks:
                 if draw:
@@ -188,15 +96,12 @@ class FaceMeshDetector:
                 # if id % 2 == 0:
                 # cv2.putText(img, str(id), (x,y), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0), 1)
                 # cv2.putText(empty, str(id), (x,y), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0), 1)
+                # cv2.rectangle(contorno, )
                 if lipsOutter.get(id):
-                    # cv2.putText(img, str(id), (x,y), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0), 1)
                     img = cv2.circle(img, (x,y), 1, (255, 255, 255), -1)
-                    # cv2.putText(empty, str(id), (x,y), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0), 1)
                     empty = cv2.circle(empty, (x,y), 1, (255, 255, 255), -1)
                 face.append([x,y])
-                
-            face.append(face)
-        return empty, img
+        return empty, img, contorno
 
 def main():
     pTime = 0
@@ -223,7 +128,7 @@ def main():
                 # npdata = np.fromstring(data, dtype=np.uint8)
                 frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                empty, img = detector.findOnlyFaceMesh(frame)
+                empty, img, contorno = detector.findOnlyFaceMesh(frame)
                 cTime = time.time()
                 fps = 1 / (cTime - pTime)
                 pTime = cTime
@@ -232,6 +137,7 @@ def main():
 
                 cv2.imshow('Key Points', img)
                 cv2.imshow('Fundo escuro', empty)
+                # cv2.imshow('Teste', contorno)
                 key = cv2.waitKey(1) & 0xFF
                 if key == ord('q'):
                     client_socket.close()
