@@ -14,7 +14,8 @@ from keras.models import model_from_json
 from tensorflow.keras.models import Sequential
 from model import FacialExpressionModel
 
-model = FacialExpressionModel("./model.json", "./model.h5")
+# model = FacialExpressionModel("./model.json", "./model.h5")
+model = FacialExpressionModel("./20230128-214500.json", "./20230128-214500.h5")
 
 BUFF_SIZE = 65000
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -122,6 +123,13 @@ def main():
     while True:
         packet,addr = client_socket.recvfrom(BUFF_SIZE)
 
+        verifyServer = packet.decode("utf-8")
+
+        if verifyServer == "shutdown":
+            # client_socket.shutdown(socket.SHUT_RDWR)
+            client_socket.close()
+            break
+
         if len(packet) < 100:
             frame_info = pickle.loads(packet)
 
@@ -142,6 +150,8 @@ def main():
                 frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
                 # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                 empty, img = detector.findOnlyFaceMesh(frame)
+
+                # cv2.imwrite("mapping_keypoints_neutral_empty.png", empty)
                 rosto = detector.findFace(frame)
                 cTime = time.time()
                 fps = 1 / (cTime - pTime)
@@ -160,16 +170,23 @@ def main():
 
                 if rosto.shape[1] > 0:
 
-                    # rosto = cv2.cvtColor(rosto, cv2.COLOR_BGR2GRAY)
-                    img_to_teste = cv2.resize(rosto, (48,48))
+                    rosto = cv2.cvtColor(rosto, cv2.COLOR_BGR2GRAY)
+                    img_to_teste = cv2.resize(rosto, (224,224))
+                    print(img_to_teste.shape)
 
-                    pred = model.predict_emotion(img_to_teste[np.newaxis, :, :])
-                    print(str(pred))
-                    client_socket.sendto(pred.encode('utf-8'), addr)
+                    # pred, arrayPreds = model.predict_emotion(img_to_teste[np.newaxis, :, :])
+                    pred, arrayPreds = model.predict_emotion(img_to_teste[np.newaxis, :])
+                    for i in range(len(arrayPreds)):
+                        arrayPreds[i] = format(arrayPreds[i], '.3f')
+
+                    predWithData = pred + ":" + str(arrayPreds)
+
+                    client_socket.sendto(predWithData.encode('utf-8'), addr)
 
 
                 key = cv2.waitKey(1) & 0xFF
                 if key == ord('q'):
+                    # client_socket.shutdown(socket.SHUT_RDWR)
                     client_socket.close()
                     break
 
