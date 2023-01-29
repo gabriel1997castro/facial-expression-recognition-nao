@@ -33,4 +33,4 @@ class FacialExpressionModel(object):
         global session
         set_session(session)
         self.preds = self.loaded_model.predict(img)
-        return FacialExpressionModel.EMOTIONS_LIST[np.argmax(self.preds)]
+        return FacialExpressionModel.EMOTIONS_LIST[np.argmax(self.preds)], self.preds[0]
